@@ -4,6 +4,13 @@
     <script>
       var chapter = {
         "1": "1sxT6mJoszlYE3MtUcVQQhQmvy60Tv5kD",
+        "2": "1OMHNS6x5nR6WjdE_YbZBhkaHKaZAUEga",
+        "3": "1d-2uQE_oTWeUmwJGZwd0M8MpWEDIzPby",
+        "4": "14xb5NoIgvBkD3HjZcUGL3ZwH-uAtvpPG",
+        "5": "180n3FVc4I_2n2Yv0FgdfFHjHfGSV5d59",
+        "6": "1XTvJiraHHsOCpH8aVuj-5GyY_KsAwC95",
+        "7": "11KNbMOSHRs2q4jpGi9MbnJ2JaR7AbHL3",
+        "8": "1BaZavtZ2mwQvbXaY7CrDYGj_doFbdTd0",
         "9": "1CHI_qeD2CSFY_IZqHGq5UDT-AZHo8Oy1",
         "10": "13MgswMnROAIneDed6ndCqUzF6QTnUa5Y",
         "11": "1ab-axJbKt7BtIUtl5la4Fxe_CJ-1WmOM",
@@ -22,9 +29,8 @@
         else return `https://drive.google.com/uc?id=${id}`;
       }
       function* loadFiveImg() {
-        let countFive = fiveInARow();
         let filenames = Object.keys(file);
-        let callback = yield countFive;
+        let callback = yield;
 
         for (let i = 0; i < filenames.length; i++) {
           let node = document.createElement("img");
@@ -64,7 +70,8 @@
 
           node.onload = () => {
             let loadImgGen = loadFiveImg();
-            let counter = loadImgGen.next().value;
+			loadImgGen.next()
+            let counter = fiveInARow();
             loadImgGen.next(() => counter.next().value && loadImgGen.next());
           };
           document.head.appendChild(node);
