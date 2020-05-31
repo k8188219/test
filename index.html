@@ -1,12 +1,47 @@
-<!DOCTYPE html>
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <script>
       var chapter = {
         "1": "1sxT6mJoszlYE3MtUcVQQhQmvy60Tv5kD",
-        "19": "1HKn4_XpHBbUzxeGZYVnCd_XQvt2-xd_t"
+        "9": "1CHI_qeD2CSFY_IZqHGq5UDT-AZHo8Oy1",
+        "10": "13MgswMnROAIneDed6ndCqUzF6QTnUa5Y",
+        "11": "1ab-axJbKt7BtIUtl5la4Fxe_CJ-1WmOM",
+        "12": "1YZVVQst7HWG13Dtd9gDTV8JT2Hh8uH-v",
+        "13": "1t8B_O0zf8s4K4eh0ILs47XfkXx7G-bX8",
+        "14": "1NK7BhZC8Q6dJnTQRyI4eP0zzSNdi9yt_",
+        "15": "1REqHbg4KYQ69KVm7kWxAyPJUUX2YARfm",
+        "16": "1t9j7YQYLLN5h5LOU2cc3v9jAIwDmheoP",
+        "17": "1WwrHUm5KOwW9zoiahKwTzdemqTO5ukSy",
+        "18": "1KZi1XCK2N8YMWINqlw-uB0JCP0zsWfAT",
+        "19": "1q3A_vgXuQuUYRmrEXBBJYH9SfaVzEUeg"
       };
+
+      function linkGenerator(id) {
+        if (location.search) return `https://drive.google.com/uc${location.search}&id=${id}`;
+        else return `https://drive.google.com/uc?id=${id}`;
+      }
+      function* loadFiveImg() {
+        let countFive = fiveInARow();
+        let filenames = Object.keys(file);
+        let callback = yield countFive;
+
+        for (let i = 0; i < filenames.length; i++) {
+          let node = document.createElement("img");
+          node.src = linkGenerator(file[filenames[i]]);
+          node.onload = callback;
+          document.head.appendChild(node);
+          if (i % 5 == 4) {
+            yield;
+          }
+        }
+      }
+      function* fiveInARow() {
+        for (let i = 0; ; i = i % 5 + 1) {
+          if (i % 5 == 4) yield true;
+          else yield false;
+        }
+      }
       window.onload = () => {
         if (location.search) {
           let queryString = location.search.substr(1);
@@ -20,10 +55,17 @@
           if (!argsObject["chapter"]) return;
           let authuser = argsObject["authuser"] ? `&authuser=${argsObject["authuser"]}` : "";
           let node = document.createElement("script");
+          node.charset = "UTF-8";
           node.src = `https://drive.google.com/uc?id=${chapter[argsObject["chapter"]]}${authuser}`;
           node.onerror = () => {
-            document.getElementById("loader").className = "exclamation"
-            alert("maybe need authuser")
+            document.getElementById("loader").className = "exclamation";
+            alert("maybe need authuser");
+          };
+
+          node.onload = () => {
+            let loadImgGen = loadFiveImg();
+            let counter = loadImgGen.next().value;
+            loadImgGen.next(() => counter.next().value && loadImgGen.next());
           };
           document.head.appendChild(node);
           document.body.innerHTML = `<div id="loader" class="loader"></div>`;
@@ -57,7 +99,8 @@
         animation: spin 1s linear infinite;
       }
 
-      .exclamation, .exclamation::after {
+      .exclamation,
+      .exclamation::after {
         margin-top: 1em;
         color: yellow;
         font-size: 3em;
