@@ -1,9 +1,10 @@
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
     <script>
       var chapter = {
-        "1": "1sxT6mJoszlYE3MtUcVQQhQmvy60Tv5kD",
+        "1": "1WsTuPVriB9ADU8LdR51LLlEI9_uTuSGF",
         "2": "1OMHNS6x5nR6WjdE_YbZBhkaHKaZAUEga",
         "3": "1d-2uQE_oTWeUmwJGZwd0M8MpWEDIzPby",
         "4": "14xb5NoIgvBkD3HjZcUGL3ZwH-uAtvpPG",
@@ -28,6 +29,7 @@
         if (location.search) return `https://drive.google.com/uc${location.search}&id=${id}`;
         else return `https://drive.google.com/uc?id=${id}`;
       }
+
       function* loadFiveImg() {
         let filenames = Object.keys(file);
         let callback = yield;
@@ -42,42 +44,95 @@
           }
         }
       }
+
       function* fiveInARow() {
-        for (let i = 0; ; i = i % 5 + 1) {
+        for (let i = 0; ; i = (i % 5) + 1) {
           if (i % 5 == 4) yield true;
           else yield false;
         }
       }
+
+      function useHashURL() {
+        location.hash = location.hash || "#/index";
+
+        const delegate = (selector) => (cb) => (e) =>
+          e.path.some((ele) => ele.matches && ele.matches(selector)) &&
+          cb(
+            e,
+            e.path.find((ele) => ele.matches(selector))
+          );
+        const aDelegate = delegate("a");
+        window.addEventListener(
+          "click",
+          aDelegate((e, target) => {
+            e.preventDefault();
+            let getLink = RegExp(`^.*\/([^/]*)\.html(?:.*)$`);
+            if (!getLink.test(target.href)) return;
+            let src = getLink.exec(target.href)[1];
+            location.hash += `/${src}`;
+          })
+        );
+      }
+
+      function loadPage() {
+        let hash = location.hash;
+        let getLink = RegExp(`/[\\w]*$`);
+        if (!getLink.test(hash)) return;
+
+        let src = getLink.exec(hash)[0].substr(1);
+        let tempHTML = window[src]();
+
+        Object.keys(file).forEach((k) => {
+          tempHTML = tempHTML.replace(RegExp(`../content_data/${k}`, "g"), linkGenerator(file[k]));
+          tempHTML = tempHTML.replace(RegExp(`../jpg/${k}`, "g"), linkGenerator(file[k]));
+          tempHTML = tempHTML.replace(RegExp(`../CG/${k}`, "g"), linkGenerator(file[k]));
+        });
+
+        document.body.innerHTML = tempHTML;
+        document.body.scrollTop = 0; // For Safari
+        document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+        return false;
+      }
+
       window.onload = () => {
-        if (location.search) {
-          let queryString = location.search.substr(1);
-          let argsArray = queryString.match(RegExp(`([\\w]+=?(.*?)|[\\w]+)(&|$)`, "g")) || [];
-          let argsObject = {};
-          argsArray.forEach((i) => {
-            let keyToValue = i.match(RegExp(`([\\w]+)=?(.*?)(&|$)`));
-            argsObject[keyToValue[1]] = keyToValue[2];
-          });
+        if (!location.search) return;
+        let queryString = location.search.substr(1);
+        let argsArray = queryString.match(RegExp(`([\\w]+=?(.*?)|[\\w]+)(&|$)`, "g")) || [];
+        let argsObject = {};
+        argsArray.forEach((i) => {
+          let keyToValue = i.match(RegExp(`([\\w]+)=?(.*?)(&|$)`));
+          argsObject[keyToValue[1]] = keyToValue[2];
+        });
 
-          if (!argsObject["chapter"]) return;
-          let authuser = argsObject["authuser"] ? `&authuser=${argsObject["authuser"]}` : "";
-          let node = document.createElement("script");
-          node.charset = "UTF-8";
-          node.src = `https://drive.google.com/uc?id=${chapter[argsObject["chapter"]]}${authuser}`;
-          node.onerror = () => {
-            document.getElementById("loader").className = "exclamation";
-            alert("maybe need authuser");
-          };
+        if (!argsObject["chapter"]) return;
+        let authuser = argsObject["authuser"] ? `&authuser=${argsObject["authuser"]}` : "";
+        let node = document.createElement("script");
+        node.charset = "UTF-8";
+        node.src = `https://drive.google.com/uc?id=${chapter[argsObject["chapter"]]}${authuser}`;
+        node.onerror = () => {
+          document.getElementById("loader").className = "exclamation";
+          alert("maybe need authuser");
+        };
+        node.onload = () => {
+          loadPage();
+          let loadImgGen = loadFiveImg();
+          let counter = fiveInARow();
+          loadImgGen.next();
+          loadImgGen.next(() => counter.next().value && loadImgGen.next());
+        };
+        document.head.appendChild(node);
 
-          node.onload = () => {
-            let loadImgGen = loadFiveImg();
-			loadImgGen.next()
-            let counter = fiveInARow();
-            loadImgGen.next(() => counter.next().value && loadImgGen.next());
-          };
-          document.head.appendChild(node);
-          document.body.innerHTML = `<div id="loader" class="loader"></div>`;
-        }
+        document.body.innerHTML = `<div id="loader" class="loader"></div>`;
       };
+
+      window.onhashchange = loadPage;
+
+      window.onbeforeunload = function (event) {
+        event.preventDefault();
+        return false;
+      };
+
+      useHashURL();
     </script>
     <style type="text/css" media="screen">
       body {
